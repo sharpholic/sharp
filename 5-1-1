@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시간의 강을 건너는 아이: 할아버지의 마지막 이야기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Yeon+Sung&display=swap');
+
+        :root {
+            --primary-font: 'Gowun Batang', serif;
+            --letter-font: 'Yeon Sung', cursive;
+            --text-color: #f0e6d2;
+            --highlight-color: #ffc107;
+            --correct-color: #28a745;
+            --wrong-color: #dc3545;
+            --bg-color: #1a1a2e;
+            --box-bg: rgba(26, 26, 46, 0.85);
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--primary-font);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 움직이는 별 배경 */
+        #stars, #stars2, #stars3 {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: transparent;
+        }
+
+        #stars {
+            background-image: radial-gradient(ellipse at top, transparent 0%, var(--bg-color)),
+                              radial-gradient(ellipse at bottom, var(--bg-color), transparent);
+            z-index: 0;
+        }
+        
+        .star-bg {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><circle fill="white" cx="0.5" cy="0.5" r="0.5"/></svg>');
+            background-repeat: repeat;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        #stars2 {
+            background-size: 1px 1px;
+            animation: animStar 50s linear infinite;
+        }
+
+        #stars3 {
+            background-size: 2px 2px;
+            animation: animStar 100s linear infinite;
+        }
+
+        @keyframes animStar {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-2000px); }
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 600px;
+            background: var(--box-bg);
+            border: 2px solid var(--highlight-color);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+            box-sizing: border-box;
+            backdrop-filter: blur(5px);
+        }
+
+        .story-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 15px;
+        }
+
+        /* 스크롤바 디자인 */
+        .story-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .story-content::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        .story-content::-webkit-scrollbar-thumb {
+            background: var(--highlight-color);
+            border-radius: 4px;
+        }
+
+        .scene {
+            display: none;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .scene.active {
+            display: block;
+            opacity: 1;
+        }
+        
+        h1, h2, h3 {
+            color: var(--highlight-color);
+            text-align: center;
+            text-shadow: 0 0 5px var(--highlight-color);
+        }
+        
+        p, .dialogue {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 1em;
+        }
+
+        .dialogue {
+            font-style: italic;
+            color: #a2d2ff;
+            border-left: 3px solid #a2d2ff;
+            padding-left: 15px;
+        }
+
+        .start-button, .next-button {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 25px;
+            font-family: var(--primary-font);
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--bg-color);
+            background-color: var(--highlight-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.7);
+            transition: all 0.3s ease;
+        }
+
+        .start-button:hover, .next-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 193, 7, 1);
+        }
+        
+        .clickable {
+            color: var(--highlight-color);
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.3s;
+        }
+        .clickable:hover {
+            color: white;
+        }
+
+        /* 퀴즈 박스 */
+        .quiz-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--highlight-color);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        .quiz-box h3 {
+            margin-top: 0;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .options button {
+            width: 100%;
+            padding: 10px;
+            font-family: var(--primary-font);
+            font-size: 1em;
+            background: rgba(255,255,255,0.1);
+            color: var(--text-color);
+            border: 2px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+        .options button:hover {
+            background: rgba(255, 193, 7, 0.3);
+            border-color: var(--highlight-color);
+        }
+        .options button.correct {
+            border-color: var(--correct-color);
+            box-shadow: 0 0 10px var(--correct-color);
+        }
+        .options button.wrong {
+            border-color: var(--wrong-color);
+            animation: shake 0.5s;
+        }
+        
+        .input-quiz {
+            display: flex;
+            gap: 10px;
+        }
+        .input-quiz input {
+            flex-grow: 1;
+            padding: 10px;
+            font-family: var(--primary-font);
+            font-size: 1em;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--text-color);
+            border-radius: 5px;
+            color: var(--text-color);
+        }
+        .input-quiz button {
+             padding: 10px 15px;
+             font-family: var(--primary-font);
+             font-size: 1em;
+             background: var(--highlight-color);
+             color: var(--bg-color);
+             border: none;
+             border-radius: 5px;
+             cursor: pointer;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        /* 할아버지 편지 스타일 수정 */
+        #final-letter {
+            background-color: #fdf5e6; /* Old Lace color for parchment */
+            padding: 30px 40px;
+            color: #4a2c2a;
+            border: 1px solid #d2b48c;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            font-family: var(--letter-font); /* 손글씨 폰트 적용 */
+            font-size: 1.3em; /* 글자 크기 확대 */
+            line-height: 2.4; /* 줄 간격 확대 */
+        }
+        #final-letter p {
+            margin-bottom: 2em; /* 문단 간격 추가 */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="stars"></div>
+    <div id="stars2" class="star-bg"></div>
+    <div id="stars3" class="star-bg"></div>
+
+    <div class="game-container">
+        <div class="story-content" id="story-content">
+
+            <div id="start" class="scene active">
+                <h1>시간의 강을 건너는 아이</h1>
+                <h2>할아버지의 마지막 이야기</h2>
+                <p style="text-align: center; margin-top: 30px;">
+                    이 이야기는 당신이 주인공이 되어<br>
+                    시간 속에 흩어진 역사의 조각을 맞추는 모험입니다.<br>
+                    할아버지와의 약속을 지키기 위해,<br>
+                    이제, 시간의 강을 건널 준비가 되셨나요?
+                </p>
+                <button class="start-button" onclick="showScene('prologue')">모험 시작하기</button>
+            </div>
+
+            <div id="prologue" class="scene">
+                <h2>프롤로그: 오래된 약속</h2>
+                <div class="story-text"></div>
+                <button class="next-button" style="display:none;" onclick="showScene('chapter1')">시간의 소용돌이 속으로...</button>
+            </div>
+
+            <div id="chapter1" class="scene">
+                <h2>제1장: 역사의 여명 속에서</h2>
+                <div class="story-text"></div>
+                <div class="quiz-box" style="display:none;">
+                    <h3>첫 번째 문제</h3>
+                    <p>우리 역사상 가장 먼저 세워진 나라는 '고조선'입니다. 고조선은 청동기 문화를 바탕으로 발전했지요. 고조선의 대표적인 문화유산으로 바르게 짝지어진 것은 무엇일까요?</p>
+                    <div class="options">
+                        <button onclick="checkAnswer(1, false, this)">① 금관, 천마도</button>
+                        <button onclick="checkAnswer(1, true, this)">② 비파형 동검, 탁자식 고인돌</button>
+                        <button onclick="checkAnswer(1, false, this)">③ 무령왕릉, 미륵사지 석탑</button>
+                        <button onclick="checkAnswer(1, false, this)">④ 고분벽화, 금동 연가 7년명 여래입상</button>
+                    </div>
+                </div>
+                <button class="next-button" style="display:none;" onclick="showScene('chapter2')">다음 시대로 이동하기</button>
+            </div>
+
+            <div id="chapter2" class="scene">
+                <h2>제2장: 세 개의 깃발, 하나의 염원</h2>
+                <div class="story-text"></div>
+                <div class="quiz-box" style="display:none;">
+                    <h3>두 번째 문제</h3>
+                    <p>왕의 힘을 더욱 강하게 만들고, 백성들의 마음을 하나로 모으기 위해 세 나라가 공통으로 받아들인 사상은 무엇이었을까요?</p>
+                    <div class="input-quiz">
+                        <input type="text" id="q2-input" placeholder="정답을 입력하세요">
+                        <button onclick="checkAnswer(2, null, this)">확인</button>
+                    </div>
+                </div>
+                 <div class="quiz-box" style="display:none;">
+                    <h3>세 번째 문제</h3>
+                    <p>삼국 시대에 가장 치열한 경쟁이 벌어졌던 곳은 바로 '한강' 유역이었습니다. 이 지역을 차지하는 나라는 전성기를 맞이할 수 있었지요. 이 설명이 맞으면 O, 틀리면 X를 선택하세요.</p>
+                     <div class="options">
+                        <button onclick="checkAnswer(3, true, this)">O</button>
+                        <button onclick="checkAnswer(3, false, this)">X</button>
+                    </div>
+                </div>
+                <div class="quiz-box" style="display:none;">
+                    <h3>네 번째 문제</h3>
+                    <p>6세기, 화랑도를 국가적인 조직으로 바꾸고 한강 유역을 차지하며 신라의 전성기를 이끈 왕의 이름은 무엇일까요?</p>
+                     <div class="options">
+                        <button onclick="checkAnswer(4, false, this)">① 광개토대왕</button>
+                        <button onclick="checkAnswer(4, false, this)">② 근초고왕</button>
+                        <button onclick="checkAnswer(4, false, this)">③ 장수왕</button>
+                        <button onclick="checkAnswer(4, true, this)">④ 진흥왕</button>
+                    </div>
+                </div>
+                <button class="next-button" style="display:none;" onclick="showScene('chapter3')">통일의 길을 향하여</button>
+            </div>
+            
+            <div id="chapter3" class="scene">
+                <h2>제3장: 남겨진 자와 나아가는 자</h2>
+                <div class="story-text"></div>
+                 <div class="quiz-box" style="display:none;">
+                    <h3>다섯 번째 문제</h3>
+                    <p>신라가 당나라와 동맹을 맺어 가장 먼저 멸망시킨 나라는 어디였을까요?</p>
+                     <div class="options">
+                        <button onclick="checkAnswer(5, false, this)">① 고구려</button>
+                        <button onclick="checkAnswer(5, true, this)">② 백제</button>
+                        <button onclick="checkAnswer(5, false, this)">③ 가야</button>
+                    </div>
+                </div>
+                <div class="quiz-box" style="display:none;">
+                    <h3>여섯 번째 문제</h3>
+                    <p>고구려가 멸망한 후, 대조영이 고구려 유민들을 이끌고 세운, 고구려를 계승한 나라의 이름은 무엇일까요?</p>
+                    <div class="input-quiz">
+                        <input type="text" id="q6-input" placeholder="정답을 입력하세요">
+                        <button onclick="checkAnswer(6, null, this)">확인</button>
+                    </div>
+                </div>
+                 <div class="quiz-box" style="display:none;">
+                    <h3>일곱 번째 문제</h3>
+                    <p>새롭게 세워진 이 나라는 크게 번성하여, 당나라로부터 '바다 동쪽의 번성한 나라'라는 뜻의 '이것'으로 불렸습니다. 무엇일까요?</p>
+                    <div class="input-quiz">
+                        <input type="text" id="q7-input" placeholder="정답을 입력하세요">
+                        <button onclick="checkAnswer(7, null, this)">확인</button>
+                    </div>
+                </div>
+                <button class="next-button" style="display:none;" onclick="showScene('chapter4')">마지막 관문으로...</button>
+            </div>
+
+            <div id="chapter4" class="scene">
+                <h2>제4장: 기억의 전당</h2>
+                <div class="story-text"></div>
+                 <div class="quiz-box" style="display:none;">
+                     <h3>여덟 번째 ~ 열한 번째 문제</h3>
+                     <p>이제 마지막 관문입니다. 각 문화유산에 담긴 기억을 되찾아 주세요.</p>
+                     <div id="final-quizzes"></div>
+                 </div>
+                <button class="next-button" style="display:none;" onclick="showScene('epilogue')">마지막 이야기를 향해</button>
+            </div>
+            
+            <div id="epilogue" class="scene">
+                <h2>에필로그: 할아버지의 마지막 편지</h2>
+                <div class="story-text"></div>
+                 <div id="final-letter-container" style="display:none;">
+                     <div id="final-letter">
+                         <p>사랑하는 내 손주에게.</p>
+                         <p>이 편지를 읽고 있다면, 너는 시간의 강을 무사히 건너고 온 것이겠구나. 놀랐느냐? 사실 네가 만난 '역사의 수호자'는 우리 가문 대대로 역사를 기록하고 지켜온 사람들의 영혼이 모인 존재란다. 그리고 그 시작은 아주 먼 옛날, 고구려의 기상을 품고 발해 땅에 새로운 역사를 써 내려간 한 학자였지. 바로 우리의 첫 번째 조상이란다.</p>
+                         <p>우리는 그저 평범한 사람들이 아니다. 우리는 '기억을 지키는 자'들이다. 내가 너에게 수많은 역사 이야기를 들려준 것은, 단순히 옛날이야기를 하기 위함이 아니었단다. 우리 핏속에 잠들어 있는 그 사명을 일깨워주고 싶어서였지. 네가 비파형 동검 앞에서 느꼈던 그 이끌림은, 우연이 아닌 필연이었던 게다.</p>
+                         <p>이제 할애비는 없지만, 슬퍼하지 마라. 나는 이야기 속에서, 그리고 역사의 모든 순간 속에서 너와 함께 있을 테니. 이제부터는 네가 '이야기꾼'이 되어다오. 우리의 위대한 역사를 잊지 말고, 다음 세대에게 전해주는 자랑스러운 '기억의 수호자'가 되어주렴.</p>
+                         <p style="text-align: right;">사랑한다, 내 강아지.<br>- 영원한 너의 이야기꾼, 할아버지가.</p>
+                     </div>
+                 </div>
+                 <button class="next-button" style="display:none;" onclick="showScene('end')">이야기를 마치며</button>
+            </div>
+            
+            <div id="end" class="scene">
+                <h1>모험이 끝났습니다</h1>
+                <p style="text-align: center;">
+                    당신은 시간의 강을 건너<br>
+                    흩어진 역사의 조각을 모두 맞추었습니다.<br>
+                    하지만 이것은 끝이 아닌 새로운 시작입니다.<br>
+                    이제 당신이 새로운 '이야기꾼'이자 '기억의 수호자'입니다.
+                </p>
+                <button class="start-button" onclick="location.reload()">다시 모험하기</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const storyText = {
+            prologue: `<p>할아버지가 돌아가신 지 어느덧 세 달이 지났다. 할아버지의 방에는 여전히 옅은 책 냄새와 함께 할아버지의 온기가 남아있는 것 같았다. 내게 역사는 딱딱한 암기 과목이 아니었다. 잠들기 전 할아버지가 들려주시던, 살아 숨 쉬는 영웅들의 이야기이자, 웃음과 눈물이 담긴 우리 모두의 앨범 사진이었다.</p><p>"나중에 크면, 할애비랑 꼭 국립중앙박물관에 가자. 우리 역사의 심장이 뛰는 소리를 직접 들어봐야지."</p><p>그 약속을 더는 할아버지와 함께 지킬 수 없게 되었지만, 나는 오늘 학교 체험학습으로 그곳에 왔다. 할아버지의 손을 잡는 대신, 가슴속에 할아버지와의 추억을 품고서. 친구들의 웃음소리에도 어딘가 마음이 텅 빈 듯했다. 정신없이 유물들 사이를 헤매던 내 발걸음이, 한 유물 앞에서 우뚝 멈춰 섰다. 바로 '<span class="clickable" onclick="triggerTimeTravel()">비파형 동검</span>'이었다. 할아버지가 특히 좋아하시던 이야기의 시작점이었다.</p><p><em>“이 검은 말이다, 그냥 쇠붙이가 아니야. 시대를 베고, 사람의 마음을 잇는 검이지. 진정으로 역사를 사랑하는 마음을 가진 이에겐, 시간의 문을 보여준단다.”</em></p><p>할아버지의 목소리가 귓가에 울리는 듯했다. 나도 모르게 손을 뻗어 차가운 유리 진열장에 손끝을 가져다 대는 순간, 세상이 회전하기 시작했다.</p>`,
+            chapter1: `<p>정신을 차렸을 때, 나는 박물관이 아닌 풀과 흙냄새가 가득한 낯선 공간에 서 있었다. 밤하늘에는 셀 수 없이 많은 별이 쏟아질 듯 빛나고 있었고, 저 멀리 거대한 돌을 옮기는 사람들의 실루엣이 보였다. 그때, 등 뒤에서 나지막하고 따뜻한 목소리가 들려왔다.</p><div class="dialogue">"놀라지 마라, 아이야. 나는 '역사의 수호자'란다. 누군가 시간의 강에 '망각'이라는 돌을 던져 역사의 흐름이 뒤엉켜 버렸지. 네가 가진 역사를 사랑하는 마음만이 이 흐름을 바로잡을 수 있단다. 각 시대의 문을 열고 흩어진 기억의 조각들을 되찾아 다오."</div>`,
+            chapter2: `<p>문을 통과하자 이번에는 함성으로 가득 찬 전쟁터였다. 하지만 모든 것이 멈춰 있었다. 북쪽에서는 말을 탄 고구려 병사들이, 서쪽에서는 정교한 갑옷을 입은 백제 병사들이, 동쪽에서는 패기 넘치는 신라의 화랑들이 서로를 향해 칼을 겨누고 있었다.</p><div class="dialogue">"깃발도, 옷도, 말도 다르지만 저들의 마음속엔 하나의 공통된 염원이 있었단다. 흩어진 백성의 마음을 하나로 모아 강한 나라를 만들고 싶다는 염원 말이다."</div>`,
+            chapter3: `<p>빛의 다리 끝에서 나는 두 개의 풍경을 동시에 보았다. 한쪽에서는 신라의 깃발 아래 삼국이 하나 되는 통일의 환호성이 울려 퍼지고 있었고, 다른 한쪽에서는 폐허가 된 고구려의 땅에서 유민들이 눈물을 삼키며 북쪽으로 향하고 있었다.</p><div class="dialogue">"하나의 역사가 완성될 때, 또 다른 역사가 시작되기도 한단다. 위대한 역사는 승리한 자들의 기록만이 아닌, 쓰러진 자들의 의지로도 이어진다는 것을 잊지 말거라."</div>`,
+            chapter4: `<p>마지막으로 들어선 방은 고요하고 성스러웠다. 수많은 문화유산이 별처럼 빛나고 있었다. 내가 정답을 맞힐 때마다, 유물은 빛을 내며 그 안에 담긴 사람들의 목소리와 풍경을 잠시나마 보여주었다.</p>`,
+            epilogue: `<p>모든 유물이 빛을 되찾자, 수호자가 내 앞에 나타났다. 그의 눈빛은 그 어느 때보다 따뜻했다.</p><div class="dialogue">"마지막 질문이다, 아이야. 너는 이 긴 여행을 통해 무엇을 느꼈느냐? 역사를 바로잡는 가장 큰 힘은 어디에 있다고 생각하지?"</div><p>정답이 없는 질문이었다. 나는 눈을 감고 할아버지를 떠올렸다. 할아버지의 주름진 손, 따뜻한 목소리, 그리고 나를 보시던 사랑스러운 눈빛을. "역사는… 그냥 외우는 사실이 아니었어요. 그 시대를 살았던 사람들의 슬픔과 기쁨, 그리고… 사랑이었어요. 그 마음을 잊지 않고 기억하려는 마음, 그게 역사를 지키는 가장 큰 힘인 것 같아요." 내 대답에 수호자는 만족스럽게 고개를 끄덕였다. 그의 모습이 점점 빛으로 변하며 나를 감쌌고, 눈을 떴을 때 나는 다시 '비파형 동검' 앞에 서 있었다. 모든 것이 순식간에 일어난 꿈만 같았다. 그때, 박물관의 나이 지긋한 학예사님이 나에게 다가와 낡은 편지 봉투를 건네주셨다. 할아버지의 마지막 편지였다.</p>`
+        };
+
+        const finalQuizzes = [
+            { q: "고구려의 대표적인 불교 조각으로, 광배 뒷면에 '연가 7년'이라는 글자가 새겨진 불상의 이름은 무엇일까요?", a: "금동연가7년명여래입상" },
+            { q: "도굴되지 않은 채 발견되어 무덤의 주인을 정확히 알 수 있었던 백제의 왕릉 이름은 무엇일까요?", a: "무령왕릉" },
+            { q: "신라 선덕여왕 때, 부처의 힘으로 외적의 침입을 막기 위해 지었으나 지금은 터만 남아있는 9층 목탑의 이름은 무엇일까요?", a: "황룡사9층목탑" },
+            { q: "통일 신라 시대의 인공 석굴 사원으로, 과학적인 설계와 뛰어난 조각 솜씨를 자랑하는 이 문화유산의 이름은 무엇일까요?", a: "석굴암" }
+        ];
+
+        let currentFinalQuiz = 0;
+        
+        function showText(element, text, callback) {
+            element.innerHTML = text;
+            if (callback) {
+                setTimeout(callback, 50);
+            }
+        }
+
+        function showScene(sceneId) {
+            const scenes = document.querySelectorAll('.scene');
+            scenes.forEach(scene => {
+                scene.classList.remove('active');
+            });
+            
+            const currentScene = document.getElementById(sceneId);
+            currentScene.classList.add('active');
+            
+            const storyDiv = currentScene.querySelector('.story-text');
+            if (storyDiv && storyText[sceneId]) {
+                const nextButton = currentScene.querySelector('.next-button');
+                const quizBoxes = currentScene.querySelectorAll('.quiz-box');
+
+                if (nextButton) nextButton.style.display = 'none';
+                
+                showText(storyDiv, storyText[sceneId], () => {
+                    if (quizBoxes.length > 0) {
+                        quizBoxes.forEach((box, index) => {
+                            setTimeout(() => {
+                                box.style.display = 'block';
+                            }, index * 100);
+                        });
+                    } else if (sceneId === 'epilogue') {
+                         setTimeout(() => {
+                            document.getElementById('final-letter-container').style.display = 'block';
+                            if(nextButton) nextButton.style.display = 'block';
+                         }, 500);
+                    }
+                    else {
+                        if (nextButton && !storyDiv.querySelector('.clickable')) {
+                            nextButton.style.display = 'block';
+                        }
+                    }
+                });
+            }
+            if (sceneId === 'chapter4') {
+                loadFinalQuiz();
+            }
+            document.getElementById('story-content').scrollTop = 0;
+        }
+
+        function triggerTimeTravel() {
+            const container = document.querySelector('.game-container');
+            container.style.transition = 'opacity 1s, transform 1s';
+            container.style.opacity = '0';
+            container.style.transform = 'scale(0.5) rotate(360deg)';
+            setTimeout(() => {
+                showScene('chapter1');
+                container.style.opacity = '1';
+                container.style.transform = 'scale(1) rotate(0deg)';
+            }, 1000);
+        }
+
+        function allQuizzesAnswered(sceneElement) {
+             const allQuizzes = sceneElement.querySelectorAll('.quiz-box');
+             const answered = sceneElement.querySelectorAll('.quiz-answered');
+             if(allQuizzes.length === answered.length) {
+                 const nextButton = sceneElement.querySelector('.next-button');
+                 if(nextButton) nextButton.style.display = 'block';
+             }
+        }
+        
+        function checkAnswer(qNum, isCorrect, element) {
+            let correct = false;
+            const quizBox = element.closest('.quiz-box');
+            if(quizBox.classList.contains('quiz-answered')) return;
+            
+            // 모든 공백을 제거하는 함수
+            const removeSpaces = (str) => str.replace(/\s/g, '');
+
+            if (qNum === 1 || qNum === 3 || qNum === 4 || qNum === 5) { // Multiple Choice
+                correct = isCorrect;
+            } else if (qNum === 2) { // Input
+                const answer = document.getElementById('q2-input').value.trim();
+                correct = (removeSpaces(answer) === '불교');
+            } else if (qNum === 6) {
+                const answer = document.getElementById('q6-input').value.trim();
+                correct = (removeSpaces(answer) === '발해');
+            } else if (qNum === 7) {
+                const answer = document.getElementById('q7-input').value.trim();
+                correct = (removeSpaces(answer) === '해동성국');
+            }
+            
+            if(correct) {
+                element.classList.add('correct');
+                const options = quizBox.querySelectorAll('button, input');
+                options.forEach(opt => opt.disabled = true);
+                if (element.tagName === 'INPUT' || element.tagName === 'BUTTON' && element.parentElement.classList.contains('input-quiz')) {
+                    const button = quizBox.querySelector('.input-quiz button');
+                    button.style.backgroundColor = 'var(--correct-color)';
+                    button.textContent = '정답!';
+                }
+                quizBox.classList.add('quiz-answered');
+                allQuizzesAnswered(element.closest('.scene'));
+            } else {
+                element.classList.add('wrong');
+                setTimeout(() => element.classList.remove('wrong'), 500);
+            }
+        }
+        
+        function loadFinalQuiz() {
+            if (currentFinalQuiz < finalQuizzes.length) {
+                const container = document.getElementById('final-quizzes');
+                container.innerHTML = `
+                    <h4>${finalQuizzes[currentFinalQuiz].q}</h4>
+                    <div class="input-quiz">
+                        <input type="text" id="final-q-input" placeholder="정답을 입력하세요">
+                        <button onclick="checkFinalAnswer()">확인</button>
+                    </div>
+                `;
+            } else {
+                 document.getElementById('final-quizzes').innerHTML = "<p>모든 기억의 조각을 되찾았습니다!</p>";
+                 document.querySelector('#chapter4 .next-button').style.display = 'block';
+            }
+        }
+        
+        function checkFinalAnswer() {
+            const input = document.getElementById('final-q-input');
+            const button = input.nextElementSibling;
+            
+            // 모든 공백을 제거하는 함수
+            const removeSpaces = (str) => str.replace(/\s/g, '');
+            
+            const userAnswer = removeSpaces(input.value);
+            const correctAnswer = finalQuizzes[currentFinalQuiz].a;
+            
+            if (userAnswer === correctAnswer) {
+                input.style.borderColor = 'var(--correct-color)';
+                button.style.background = 'var(--correct-color)';
+                button.textContent = '정답!';
+                input.disabled = true;
+                button.disabled = true;
+                currentFinalQuiz++;
+                setTimeout(loadFinalQuiz, 1000);
+            } else {
+                input.classList.add('wrong');
+                setTimeout(() => input.classList.remove('wrong'), 500);
+            }
+        }
+
+    </script>
+</body>
+</html>
